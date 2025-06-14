@@ -14,16 +14,22 @@ class ApiService {
     if (!file) {
       throw new Error('No file provided');
     }
-
+  
     const formData = new FormData();
     formData.append('document', file);
-
+  
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
+  
       const response = await fetch(`${this.baseURL}/documents/upload`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
-
+  
+      clearTimeout(timeoutId);
+  
       if (!response.ok) {
         let errorMessage = 'Upload failed';
         try {
@@ -34,10 +40,13 @@ class ApiService {
         }
         throw new Error(errorMessage);
       }
-
+  
       const result = await response.json();
       return result;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Upload timeout. The file might be too large or complex.');
+      }
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check if the backend is running.');
       }
@@ -355,7 +364,7 @@ function App() {
                 <Upload className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Your Document</h2>
                 <p className="text-gray-600 mb-6">
-                  Support for PDF, Images, Word documents, and text files
+                  Support for PDF, Images{/* , Word documents, */} and text files
                 </p>
                 
                 <div 
@@ -373,7 +382,7 @@ function App() {
                       <>
                         <FileText className="w-12 h-12 text-indigo-400 mb-4" />
                         <p className="text-lg font-medium text-gray-700">Click to upload or drag and drop</p>
-                        <p className="text-sm text-gray-500 mt-2">PDF, DOCX, JPG, PNG, TXT up to 10MB</p>
+                        <p className="text-sm text-gray-500 mt-2">PDF{/* , DOCX */}, JPG, PNG up to 10MB</p>
                       </>
                     )}
                   </div>
@@ -382,29 +391,29 @@ function App() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.txt"
+                  accept=".pdf,.jpg,.jpeg,.png,.txt" // Removed .docx,.doc
                   onChange={handleFileSelect}
                   className="hidden"
                   disabled={isProcessing}
                 />
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-gray-600 pl-4 pr-4">
                   <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4 text-red-500" />
                     <span>PDF</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  {/* <div className="flex items-center space-x-2">
                     <FileType className="w-4 h-4 text-blue-500" />
                     <span>Word</span>
-                  </div>
+                  </div> */}
                   <div className="flex items-center space-x-2">
                     <Image className="w-4 h-4 text-green-500" />
                     <span>Images</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  {/* <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4 text-gray-500" />
                     <span>Text</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -602,14 +611,14 @@ Examples:
                     <FileText className="w-4 h-4" />
                     <span>PDF</span>
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => downloadAsFormat('docx')}
                     disabled={isProcessing}
                     className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     <FileType className="w-4 h-4" />
                     <span>Word Document</span>
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => downloadAsFormat('png')}
                     disabled={isProcessing}
