@@ -7,7 +7,7 @@ class ApiService {
     // Fix for process.env not defined in browser
     this.baseURL = (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) 
       ? process.env.REACT_APP_API_URL 
-      : 'http://localhost:5004/api';
+      : 'https://abhishek.nssiitd.in/aidoc/api';
   }
 
   async uploadDocument(file) {
